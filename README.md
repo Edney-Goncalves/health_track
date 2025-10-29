@@ -1,24 +1,27 @@
-# mini-projeto-sw
-Mini projeto de Software, realizado no primeiro semestre de Engenharia de Software.
+# mini-project-sw
+Mini Software Project developed during the first semester of the Software Engineering course.
 
-# Mini-Projeto de Software — 1º Semestre
+# 🧩 Mini Software Project — 1st Semester
 
-**Disciplina:** Software Básico  
-**Professor(a):** Luiz Carlos dos Santos Filho  
-**Alunos(a):**    
-**Data:**  
-
+**Course:** Basic Software  
+**Professor:** Luiz Carlos dos Santos Filho  
+**Student(s):** Willi
+                João 
+                Gustavo
+                João Perez
+                Edney
 ---
 
-## Objetivo Geral  
-Nesse projeto foi estipulado um prazo de 1 mês para desenvolvermos um software funcional contendo:  
+## General Objective  
+This project was developed over a one-month period with the goal of creating a functional software application that includes:
 
-- Um resumo técnico;
-- Um modelo de dados (MER simplificado);
-- Uma lista de funcionalidades (CRUD + relatório) devidamente documentadas.
+- A technical summary;  
+- A simplified data model (MER);  
+- A list of features (CRUD + report), properly documented.
 
-Além das funcionalidades básicas, foi solicitado que o código em questão tenha tratamento de erros com try/except.
-O nosso modelo de dados foi definido em SQL/Postgree.
+In addition to the basic features, it was required that the program implement **error handling using try/except**.  
+Our data model was designed using **SQL/PostgreSQL**.
+
 ---
 
 **Exemplo de dados iniciais (repositório .TXT, .CSV ou SQLite):**
