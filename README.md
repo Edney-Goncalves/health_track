@@ -5,11 +5,11 @@ Mini Software Project developed during the first semester of the Software Engine
 
 **Course:** Basic Software  
 **Professor:** Luiz Carlos dos Santos Filho  
-**Student(s):** Willi
-                João 
-                Gustavo
-                João Perez
-                Edney
+**Student(s):** - Willi
+                - João 
+                - Gustavo
+                - Perez
+                - Edney
 ---
 
 ## General Objective  
