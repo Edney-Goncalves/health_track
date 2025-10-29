@@ -3,7 +3,13 @@ Mini projeto de Software, realizado no primeiro semestre de Engenharia de Softwa
 # Mini-Projeto de Software — 1º Semestre 
 **Disciplina:** Software Básico 
 **Professor(a):** Luiz Carlos dos Santos Filho 
-**Alunos(a):** 
+**Alunos(a):**
+- Willi
+- João 
+- Gustavo
+- Perez
+- Edney
+---
 
 ## Objetivo Geral Nesse projeto foi estipulado um prazo de 1 mês para desenvolvermos um software funcional contendo: 
 - Um resumo técnico;
