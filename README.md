@@ -1,15 +1,16 @@
 # mini-project-sw
 Mini Software Project developed during the first semester of the Software Engineering course.
 
-# 🧩 Mini Software Project — 1st Semester
+# Mini Software Project — 1st Semester
 
 **Course:** Basic Software  
 **Professor:** Luiz Carlos dos Santos Filho  
-**Student(s):** - Willi
-                - João 
-                - Gustavo
-                - Perez
-                - Edney
+**Student(s):** 
+- Willi
+- João 
+- Gustavo
+- Perez
+- Edney
 ---
 
 ## General Objective  
@@ -24,5 +25,5 @@ Our data model was designed using **SQL/PostgreSQL**.
 
 ---
 
-**Exemplo de dados iniciais (repositório .TXT, .CSV ou SQLite):**
+**Example inital data (repositorie .TXT, .CSV ou SQLite):**
 
