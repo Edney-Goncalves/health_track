@@ -1,49 +1,26 @@
-# mini-projeto-sw 
-Mini projeto de Software, realizado no primeiro semestre de Engenharia de Software. 
-# Mini-Projeto de Software — 1º Semestre 
-**Disciplina:** Software Básico 
-**Professor(a):** Luiz Carlos dos Santos Filho 
-**Alunos(a):**
-- Willi
-- João 
-- Gustavo
-- Perez
-- Edney
----
+# Instruções
 
-## Objetivo Geral Nesse projeto foi estipulado um prazo de 1 mês para desenvolvermos um software funcional contendo: 
-- Um resumo técnico;
-- Um modelo de dados (MER simplificado);
-- Uma lista de funcionalidades (CRUD + relatório) devidamente documentadas. Além das funcionalidades básicas, foi solicitado que o código em questão tenha tratamento de erros com try/except. O nosso modelo de dados foi definido em SQL/Postgree.
+Trabalho em Grupo: máximo 5 integrantes ( apenas um  faz o anexo)
 
----
+Critérios de funcionamento:
 
-# mini-project-sw
-Mini Software Project developed during the first semester of the Software Engineering course.
+O programa deve gravar e ler dados de um repositório local (.txt)
+Deve conter validação básica: não aceitar campos vazios, evitar duplicidade de chaves, consistências de entrada de dados, etc
+O sistema deve apresentar um menu principal para navegação entre as funções.
+Comunicação e visual com padrões profissionais
+Funcionalidades mínimas:
+repositório .txt com no mínimo 5 campos de informação (mínimo 1 chave primária)
+funções: altera, inclui exclui, relatório geral e relatório específico (CRUD)
+interface a caractere ou gráfica
+Critérios de Avaliação:
 
-# Mini Software Project — 1st Semester
+Assertividade das funcionalidades
 
-**Course:** Basic Software  
-**Professor:** Luiz Carlos dos Santos Filho  
-**Student(s):** 
-- Willi
-- João 
-- Gustavo
-- Perez
-- Edney
----
+Comunicação e visual com padrões profissionais
 
-## General Objective  
-This project was developed over a one-month period with the goal of creating a functional software application that includes:
+Entrega dos requisitos mínimos 
 
-- A technical summary;  
-- A simplified data model (MER);  
-- A list of features (CRUD + report), properly documented.
-
-In addition to the basic features, it was required that the program implement **error handling using try/except**.  
-Our data model was designed using **SQL/PostgreSQL**.
-
----
-
-**Example inital data (repositorie .TXT, .CSV ou SQLite):**
+Anexos:
+Anexar o(s) arquivo(s) .py
+Anexar o(s) arquivo(s) de repositório .txt
 
