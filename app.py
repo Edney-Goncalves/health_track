@@ -3,7 +3,7 @@ def menu():
         limpar_tela()
         print("=========================================")
         print("       HEALTH TRACK ")
-        print("O plano que cuida de você")
+        print("O sistema que cuida de você")
         print("=========================================")
         print("1 - Cadastrar Paciente")
         print("2 - Listar Paciente")
