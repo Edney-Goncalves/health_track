@@ -1,7 +1,7 @@
 # ========================================
 # UNIVERSIDADE DE MOGI DAS CRUZES - UMC
 # Professor: Luiz Carlos dos Santos Filho
-# Programa: Mini-Projeto de Software Básico (versão PostgreSQL)
+# Programa: Mini-Projeto de Software Básico
 # Desenvolvido por: Edney Leandro Gonçalves, Gustavo Seiji, João Pedro Duo,
 #                   João Pedro Perez e Willi Hasman
 # Data: 03/12/2025
