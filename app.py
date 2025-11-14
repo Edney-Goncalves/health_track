@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ========================================
 # UNIVERSIDADE DE MOGI DAS CRUZES - UMC
 # Professor: Luiz Carlos dos Santos Filho
@@ -226,6 +227,28 @@ def relatorio():
 # ====================================================
 # MENU PRINCIPAL
 # ====================================================
+=======
+import time
+
+def limpar_tela ():
+    pass
+
+def cadastrar ():
+    pass
+
+def listar ():
+    pass
+
+def atualizar ():
+    pass
+
+def excluir ():
+    pass
+
+def relatorio ():
+    pass
+
+>>>>>>> f0703e34264177b9412d4b30826f4fa68d8e0d70
 def menu():
     while True:
         limpar_tela()
