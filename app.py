@@ -1,3 +1,23 @@
+import time
+
+def limpar_tela ():
+    pass
+
+def cadastrar ():
+    pass
+
+def listar ():
+    pass
+
+def atualizar ():
+    pass
+
+def excluir ():
+    pass
+
+def relatorio ():
+    pass
+
 def menu():
     while True:
         limpar_tela()
