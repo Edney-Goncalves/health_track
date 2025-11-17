@@ -1,8 +1,4 @@
-import tkinter as tk
-
-from interface.main_window import MainWindow
-
+from main_window import MainWindow
 
 if __name__ == "__main__":
-    app = MainWindow()
-    app.run()
+    MainWindow().mainloop()

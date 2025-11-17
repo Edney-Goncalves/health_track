@@ -1,41 +1,60 @@
-from core.database import db_connection
+import json
+import os
 
 class PacienteRepository:
+    FILE_PATH = "pacientes.json"
 
     @staticmethod
-    def inserir(paciente):
-        with db_connection() as (conn, cur):
-            cur.execute("""
-                INSERT INTO pacient (name, cpf, rg, health_state, age, gender, disease_history)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, (
-                paciente["name"],
-                paciente["cpf"],
-                paciente["rg"],
-                paciente["health_state"],
-                paciente["age"],
-                paciente["gender"],
-                paciente["disease_history"]
-            ))
+    def carregar():
+        if not os.path.exists(PacienteRepository.FILE_PATH):
+            return []
+
+        with open(PacienteRepository.FILE_PATH, "r", encoding="utf-8") as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return []
+
+    @staticmethod
+    def salvar(lista):
+        with open(PacienteRepository.FILE_PATH, "w", encoding="utf-8") as f:
+            json.dump(lista, f, indent=4, ensure_ascii=False)
+
+    @staticmethod
+    def adicionar(paciente):
+        lista = PacienteRepository.carregar()
+        lista.append(paciente)
+        PacienteRepository.salvar(lista)
+
+    @staticmethod
+    def atualizar(cpf, dados):
+        lista = PacienteRepository.carregar()
+        for p in lista:
+            if p["cpf"] == cpf:
+                p.update(dados)
+                PacienteRepository.salvar(lista)
+                return True
+        return False
+
+    @staticmethod
+    def remover(cpf):
+        lista = PacienteRepository.carregar()
+        nova_lista = [p for p in lista if p["cpf"] != cpf]
+
+        if len(lista) == len(nova_lista):
+            return False
+
+        PacienteRepository.salvar(nova_lista)
+        return True
+
+    @staticmethod
+    def buscar(cpf):
+        lista = PacienteRepository.carregar()
+        for p in lista:
+            if p["cpf"] == cpf:
+                return p
+        return None
 
     @staticmethod
     def listar():
-        with db_connection() as (conn, cur):
-            cur.execute("SELECT * FROM pacient")
-            return cur.fetchall()
-
-    @staticmethod
-    def buscar_por_cpf(cpf):
-        with db_connection() as (conn, cur):
-            cur.execute("SELECT * FROM pacient WHERE cpf = %s", (cpf,))
-            return cur.fetchone()
-
-    @staticmethod
-    def atualizar(cpf, campo, novo_valor):
-        with db_connection() as (conn, cur):
-            cur.execute(f"UPDATE pacient SET {campo} = %s WHERE cpf = %s", (novo_valor, cpf))
-
-    @staticmethod
-    def excluir(cpf):
-        with db_connection() as (conn, cur):
-            cur.execute("DELETE FROM pacient WHERE cpf = %s", (cpf,))
+        return PacienteRepository.carregar()
