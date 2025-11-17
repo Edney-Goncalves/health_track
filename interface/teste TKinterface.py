@@ -1,12 +1,20 @@
-# 13/11/25
+# ========================================
+# UNIVERSIDADE DE MOGI DAS CRUZES - UMC
+# Professor: Luiz Carlos dos Santos Filho
+# Programa: Mini-Projeto de Software Básico (versão PostgreSQL)
+# Desenvolvido por: Edney Leandro Gonçalves, Gustavo Seiji, João Pedro Duo,
+#                   João Pedro Perez e Willi Hasman
+# Data: 03/12/2025
 # TKINTER
 # Bibliotecas
+# ========================================
+
 from tkinter import *
 from tkinter import ttk
 from PIL import Image, ImageTk 
 from tkinter.messagebox import showinfo
 from tkinter.messagebox import askyesno
-from app import cadastrar, listar, atualizar, excluir, relatorio
+from func import cadastrar, listar, atualizar, excluir, relatorio
 
 # Função para Logotipo
 def Logo ():
