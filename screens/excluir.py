@@ -7,7 +7,6 @@ from tkinter import messagebox
 
 class ExcluirScreen(tk.Frame):
     def __init__(self, parent, controller):
-        print("Carregou HOME")
         super().__init__(parent)
         self.controller = controller
         self.configure(bg="white")

@@ -23,7 +23,7 @@ class MainWindow(tk.Tk):
 
         self.frames = {}  # dicionário -> guarda instâncias das telas
 
-        # todas as telas que existirão
+        # todas as telas existentes
         telas = {
             "home": HomeScreen,
             "cadastro": CadastroScreen,

@@ -6,7 +6,6 @@ from services.pacientes_service import PacienteService
 
 class EditarScreen(tk.Frame): 
     def __init__(self, parent, controller):
-        print("Carregou HOME")
         super().__init__(parent, bg="white") 
         self.controller = controller
         self.build_logo()

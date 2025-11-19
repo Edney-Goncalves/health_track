@@ -1,0 +1,18 @@
+Bugs existentes:
+
+18/11/2025
+- Erro ao cadastrar novo paciente
+Mensagem: 
+Exception in Tkinter callback
+Traceback (most recent call last):
+  File "C:\Python313\Lib\tkinter\__init__.py", line 2068, in __call__
+    return self.func(*args)
+           ~~~~~~~~~^^^^^^^
+  File "c:\Users\dneyl\OneDrive\Área de Trabalho\Engenharia de Software\Projetos\mini-projeto-sw\screens\cadastro.py", line 43, in salvar
+    PacienteService.cadastrar(dados)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "c:\Users\dneyl\OneDrive\Área de Trabalho\Engenharia de Software\Projetos\mini-projeto-sw\services\pacientes_service.py", line 7, in cadastrar
+    existente = PacienteRepository.buscar_por_cpf(dados["cpf"])
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'PacienteRepository' has no attribute 'buscar_por_cpf'    
+PS C:\Users\dneyl\OneDrive\Área de Trabalho\Engenharia de Software\Projetos\mini-proje
