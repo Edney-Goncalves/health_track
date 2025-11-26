@@ -137,6 +137,20 @@ class HEALTHTRACK_APP (ctk.CTk):
         self.btn_relatorios.configure(fg_color="#0B395C")
         self.btn_relatorios.pack(pady=5, padx=20)
 
+        # botão atualizar pacientes
+        self.btn_atualizar_pacientes = ctk.CTkButton(
+            self.botoes_frame, text="Atualizar Pacientes",
+            text_color="#FFFFFF",
+            command=self.listar,
+            corner_radius=10,   # arredondado
+            border_width=2,
+            border_color="white",
+            hover_color="#54ACF0",
+            font=("Arial", 16, "bold")
+        )
+        self.btn_atualizar_pacientes.configure(fg_color="#0B395C")
+        self.btn_atualizar_pacientes.pack(pady=5, padx=20)
+
         # ESPAÇO FLEXÍVEL para empurrar o botão Sair para baixo
         self.espaco_flexivel = ctk.CTkLabel(self.menu_frame, text="")
         self.espaco_flexivel.pack(fill="y", expand=True, padx=20)
@@ -194,7 +208,8 @@ class HEALTHTRACK_APP (ctk.CTk):
                                     'rg': dados[3],
                                     'genero': dados[4],
                                     'saude': dados[5],
-                                    'historico': dados[6]
+                                    'historico': dados[6],
+                                    'observacoes': dados[7] if len(dados) > 7 else ''
                                 }
                                 pacientes.append(paciente)
                 print(F"Carregados {len(pacientes)} pacientes de: {caminho_arquivo}") # Debug
@@ -212,8 +227,17 @@ class HEALTHTRACK_APP (ctk.CTk):
 
             with open(caminho_arquivo, "w", encoding="utf-8") as arquivo:
                 for paciente in pacientes:
-                    linha = F"{paciente['nome']}, {paciente['idade']}, {paciente['cpf']}, {paciente['rg']}, {paciente['genero']}, {paciente['saude']}, {paciente['historico']}\n"
-                    arquivo.write(linha)
+                    linha = [
+                        paciente.get('nome', ''),
+                        paciente.get('idade', ''),
+                        paciente.get('cpf', ''),
+                        paciente.get('rg', ''),
+                        paciente.get('genero', ''),
+                        paciente.get('saude', ''),
+                        paciente.get('historico', ''),
+                        paciente.get('observacoes', '')
+                    ]
+                    arquivo.write(",".join(linha) + "\n")
 
             print(f"Salvos {len(pacientes)} pacientes em: {caminho_arquivo}")
             return True
@@ -502,7 +526,8 @@ class HEALTHTRACK_APP (ctk.CTk):
             'rg': Rg.get().strip(),
             'genero': genero.get().strip(),
             'saude': estado_saude.get().strip(),
-            'historico': historico_doencas.get().strip()
+            'historico': historico_doencas.get().strip(),
+            'observacoes': ''
         }
 
         # Validações
@@ -668,7 +693,7 @@ class HEALTHTRACK_APP (ctk.CTk):
         except Exception as e:
             ctk.CTkLabel(self.main_frame, text=f"Erro ao carregar pacientes: {str(e)}").pack()
 
-    def selecionar_paciente(self, indice, card, paciente=None):
+    def selecionar_paciente(self, i, card, paciente=None):
         # Método para selecionar um paciente e destacar o card
 
         # Restaura a cor de todos os cards para o padrão
@@ -703,24 +728,6 @@ class HEALTHTRACK_APP (ctk.CTk):
 
         titulo = ctk.CTkLabel(self.janela_relatorio, text="Relatório do Paciente", font=("Arial", 20, "bold"))
         titulo.pack(pady=20)
-
-        # Botões de controle no topo
-        botoes_controle_frame = ctk.CTkFrame(self.janela_relatorio, fg_color="transparent")
-        botoes_controle_frame.pack(pady=10, padx=20, fill="x")
-
-        # Botões de confirmação (inicialmente escondidos)
-        self.botoes_confirmacao_frame = ctk.CTkFrame(botoes_controle_frame, fg_color="transparent")
-
-        btn_controle_salvar = ctk.CTkButton(self.botoes_confirmacao_frame, text="Salvar", font=("Arial", 14, "bold"),
-                                            height=40, fg_color="#0B395C", hover_color="#54ACF0", command=self.salvar_edicao_rapida)
-        btn_controle_salvar.pack(side="left", padx=5)
-
-        btn_controle_cancelar = ctk.CTkButton(self.botoes_confirmacao_frame, text="Cancelar", font=("Arial", 14, "bold"),
-                                              height=40, fg_color="#6c757d", hover_color="#c9302c", command=self.desativar_modo_edicao)
-        btn_controle_cancelar.pack(side="left", padx=5)
-
-         # Espaço flexível
-        ctk.CTkLabel(botoes_controle_frame, text="", width=0).pack(side="left", fill="x", expand=True)
 
         # Frame principal com scroll
         self.main_scroll_frame = ctk.CTkScrollableFrame(self.janela_relatorio, fg_color="white")
@@ -873,9 +880,9 @@ class HEALTHTRACK_APP (ctk.CTk):
         botoes_frame = ctk.CTkFrame(self.janela_relatorio, fg_color="transparent")
         botoes_frame.pack(pady=15, padx=20, anchor="center")
 
-        # Botão editar (lado esquerdo)
-        self.btn_modo_edicao = ctk.CTkButton(botoes_controle_frame, text="Editar", font=("Arial", 14, "bold"),
-                                   height=40, fg_color="#0B395C", hover_color="#54ACF0", command= self.ativar_modo_edicao)
+        # Botão editar 
+        self.btn_modo_edicao = ctk.CTkButton(botoes_frame, text="Editar", font=("Arial", 14, "bold"),
+                                   height=40, fg_color="#0B395C", hover_color="#54ACF0", command= self.janela_edicao)
         self.btn_modo_edicao.pack(side="left", padx=5)
 
         # Botão fechar (centralizado)
@@ -885,7 +892,7 @@ class HEALTHTRACK_APP (ctk.CTk):
 
         # Botão excluir (lado direito)
         btn_excluir = ctk.CTkButton(botoes_frame, text="Excluir", font=("Arial", 14, "bold"),
-                                   height=40, fg_color="#0B395C", hover_color="#c9302c", command=lambda: self.excluir_paciente_relatorio(self.janela_relatorio))
+                                   height=40, fg_color="#0B395C", hover_color="#c9302c", command=lambda: self.excluir())
         btn_excluir.pack(side="right", padx=5)
 
     # Método auxiliar para criar itens de informação
@@ -902,43 +909,17 @@ class HEALTHTRACK_APP (ctk.CTk):
                                              font=("Arial", 14),
                                              text_color="#000000")
         self.widgets_edicao[campo].pack(anchor="w")
-
-    def ativar_modo_edicao(self):
-        # Ativa o modo de edição para todos os campos
-
-        if self.modo_edicao_ativo:
-            return
-    
-        self.modo_edicao_ativo = True
         
-        # Interface - esconde/mostra botões
-        self.btn_modo_edicao.pack_forget()
-        self.botoes_confirmacao_frame.pack(side="left", padx=5)
-        
-        # 1. Histórico médico 
-        if 'historico' in self.widgets_edicao:
-            self.widgets_edicao['historico'].configure(state="normal")
-            print("Histórico habilitado")
-
-
-        # 2. Habilita observações
-        self.ativar_edicao_obs()
-        print("Observações habilitadas")
-
-        # 3. Campos Básicos
-        self.criar_campos_edicao_simples()
-
-        messagebox.showinfo("Edição Ativada",
-                            "Mode de edição ativado!")
-        
-    def criar_campos_edicao_simples(self):
+    def janela_edicao(self):
         # Cria uma janela simples para editar campos básicos
+
         try:
             # Janela de edição rápida
             janela_edicao = ctk.CTkToplevel(self.janela_relatorio)
             janela_edicao.title("Edição de Dados")
-            janela_edicao.geometry("400X500")
+            janela_edicao.geometry("650x500")
             janela_edicao.grab_set()
+            
 
             titulo = ctk.CTkLabel(janela_edicao, text="Editar Dados do Paciente", font=("Arial", 18, "bold"))
             titulo.pack(pady=20)
@@ -970,8 +951,8 @@ class HEALTHTRACK_APP (ctk.CTk):
             ctk.CTkLabel(scroll_frame, text="Gênero:", 
                         font=("Arial", 14, "bold")).pack(anchor="w", pady=(10, 5))
             genero_entry = ctk.CTkComboBox(scroll_frame, values=["Masculino", "Feminino", "Não Binário"], dropdown_font=("Arial", 14), height=40)
-            genero_entry.set("Selecione")
-            genero_entry.grid(fill="x", pady=(0, 10))
+            genero_entry.set(self.paciente_selecionado.get('genero', 'Selecione'))
+            genero_entry.pack(fill="x", pady=(0, 10))
             self.campos_edicao_rapida['genero'] = genero_entry
             
             # 4. CPF
@@ -993,10 +974,26 @@ class HEALTHTRACK_APP (ctk.CTk):
             # 6. Estado de Saúde
             ctk.CTkLabel(scroll_frame, text="Estado de Saúde:", 
                         font=("Arial", 14, "bold")).pack(anchor="w", pady=(10, 5))
-            saude_entry = ctk.CTkEntry(scroll_frame, font=("Arial", 14), height=40)
-            saude_entry.insert(0, self.paciente_selecionado['saude'])
+            saude_entry = ctk.CTkComboBox(scroll_frame, values=["Não Urgência", "Urgência", "Emergência"], font=("Arial", 14), height=40)
+            saude_entry.set(self.paciente_selecionado.get('saude', 'Selecione o estado de saúde'))
             saude_entry.pack(fill="x", pady=(0, 10))
             self.campos_edicao_rapida['saude'] = saude_entry
+
+            # 7. Histórico de Saúde
+            ctk.CTkLabel(scroll_frame, text="Histórico de Doenças:",
+                        font=("Arial", 14, "bold")).pack(anchor="w", pady=(10, 5))
+            historico_entry = ctk.CTkEntry(scroll_frame,  height=40)
+            historico_entry.insert(0, self.paciente_selecionado['historico'])
+            historico_entry.pack(fill="x", pady=(0, 10))
+            self.campos_edicao_rapida['historico'] = historico_entry
+
+            # 8. Observações
+            ctk.CTkLabel(scroll_frame, text="Observações:",
+                        font=("Arial", 14, "bold")).pack(anchor="w", pady=(10, 5))
+            obs_entry = ctk.CTkTextbox(scroll_frame,  height=80, font=("Arial", 14))
+            obs_entry.insert("1.0", self.paciente_selecionado.get('observacoes', ''))
+            obs_entry.pack(fill="x", pady=(0, 10))
+            self.campos_edicao_rapida['observacoes'] = obs_entry
 
             # Botões
             botoes_frame = ctk.CTkFrame(janela_edicao, fg_color="transparent")
@@ -1009,6 +1006,9 @@ class HEALTHTRACK_APP (ctk.CTk):
             btn_cancelar.pack(side="left", padx=10)
 
             print("Janela de edição criada")
+
+            self.configurar_validacoes_tempo_real(nome_entry, idade_entry, cpf_entry, rg_entry)
+
         except Exception as e:
             print(F"Erro ao criar janela de edição: {e}")
             traceback.print_exc()
@@ -1016,11 +1016,36 @@ class HEALTHTRACK_APP (ctk.CTk):
     def salvar_edicao_rapida(self, janela_edicao):
         # Salva as edições da janela rápida
         try:
+            # Carrega os pacientes primeiro
+            pacientes = self.carregar_pacientes()
+
+            # Encontra o paciente atual
+            paciente_original = None
+            paciente_index = -1
+            for i, paciente in enumerate(pacientes):
+                if paciente['cpf'] == self.paciente_selecionado['cpf']:
+                    paciente_original = paciente
+                    paciente_index = i
+                    break
+
+            if not paciente_original:
+                messagebox.showerror("Erro", "Paciente não encontrado!")
+                return
+            
+            # Cria cópia dos dados originais
             dados_editados = self.dados_originais.copy()
 
-            # Coleta dados dos campos
-            for campo, entry in self.campos_edicao_rapida.items():
-                dados_editados[campo] = entry.get().strip()
+            # Atualiza os campos editados (incluindo observações)
+            for campo, widget in self.campos_edicao_rapida.items():
+                if isinstance(widget, ctk.CTkTextbox):
+                    # Para CTktextbox, usa get("1.0", "end-1c")
+                    dados_editados[campo] = widget.get("1.0", "end-1c").strip()
+                elif isinstance(widget, (ctk.CTkEntry, ctk.CTkComboBox)):
+                    # Para Entry e ComboBox, usa get()
+                    dados_editados[campo] = widget.get().strip()
+                else:
+                    # Para outros tipos de widget
+                    dados_editados[campo] = str(widget.get().strip())
 
             # Validações
             erros = self.validar_cadastro(dados_editados)
@@ -1029,44 +1054,25 @@ class HEALTHTRACK_APP (ctk.CTk):
                 messagebox.showerror("Erro na Edição", mensagem_erro)
                 return
             
-            # Salva no arquivo
-            pacientes = self.carregar_pacientes()
-            for i, paciente in enumerate(pacientes):
-                if paciente['cpf'] == self.dados_originais['cpf']:
-                    pacientes[i] = dados_editados
-                    break
+            # Atualiza na lista de pacientes
+            pacientes[paciente_index] = dados_editados
 
+            # Salva no arquivo
             if self.salvar_pacientes(pacientes):
                 messagebox.showinfo("Sucesso", "Dados atualizados com sucesso!")
                 self.paciente_selecionado = dados_editados
                 janela_edicao.destroy()
-                self.janela_relatorio.destroy()
+                # Atualiza a interface
+                if hasattr(self, 'janela_relatorio') and self.janela_relatorio:
+                    self.janela_relatorio.destroy()
                 self.listar()
             else:
-                messagebox.showerror("Erro", "Erro ao salvar dados!")
+                messagebox.showerror("Erro", F"Erro ao salvar os dados!")
 
         except Exception as e:
             messagebox.showerror("Erro", F"Erro ao salvar: {str(e)}")
-
-    def desativar_modo_edicao(self):
-        # Desativa o modo de edição
-        if not self.modo_edicao_ativo:
-            return
-        
-        self.modo_edicao_ativo = False
-        
-        # Mostra botão Editar, esconde botões Salvar/Cancelar
-        self.botoes_confirmacao_frame.pack_forget()
-        self.btn_modo_edicao.pack(side="left", padx=5)
-
-        # Desabilita apenas os campos que habilitamos
-        if 'historico' in self.widgets_edicao:
-            self.widgets_edicao['historico'].configure(state="disabled")
-        
-        # Desabilita observações
-        self.desativar_edicao_obs()
-
-        print("Modo de edição desativado")
+            print(F"Erro detalhado: {e}")
+            traceback.print_exc()
         
     # Método para definir cores baseadas no estado de saúde
     def cor_estado_saude(self, estado):
@@ -1083,9 +1089,6 @@ class HEALTHTRACK_APP (ctk.CTk):
         # Abre a tela de edição do paciente
         messagebox.showinfo("Editar", F"Editando paciente: {self.paciente_selecionado['nome']}")
         janela.destroy()
-
-    def excluir_paciente_relatorio(self):
-        pass
 
     def ativar_edicao_obs(self):
         # Ativa o modo de edição das observações
@@ -1119,7 +1122,7 @@ class HEALTHTRACK_APP (ctk.CTk):
     def salvar_obs(self):
         # Salva as observações editadas
         try:
-            novas_obs = self.observacoes_text.get("1.0", "end-1c").strip()
+            self.novas_obs = self.observacoes_text.get("1.0", "end-1c").strip()
 
             # Carrega todos os pacientes
             pacientes = self.carregar_pacientes()
@@ -1127,15 +1130,15 @@ class HEALTHTRACK_APP (ctk.CTk):
             # Atualiza as observações do paciente selecionado
             for paciente in pacientes:
                 if paciente['cpf'] == self.paciente_selecionado['cpf']:
-                    paciente['observacoes'] = novas_obs
+                    paciente['observacoes'] = self.novas_obs
                     break
 
             # Salva no arquivo
             if self.salvar_pacientes(pacientes):
                 messagebox.showinfo("Sucesso", "Observações salvas com sucesso!")
                 # Atualiza o paciente selecionado em memória
-                self.paciente_selecionado['observacoes'] = novas_obs
-                self.obs_original = novas_obs
+                self.paciente_selecionado['observacoes'] = self.novas_obs
+                self.obs_original = self.novas_obs
             else:
                 messagebox.showerror("Erro", "Erro ao salvar observações!")
 
@@ -1159,9 +1162,6 @@ class HEALTHTRACK_APP (ctk.CTk):
 
         # Desativa modo edição
         self.desativar_edicao_obs()
-
-    def conectar(self):
-        pass
 
     def excluir(self):
         # Verifica se há um paciente selecionado
@@ -1229,6 +1229,11 @@ class HEALTHTRACK_APP (ctk.CTk):
             # Atualiza a interface
             self.paciente_selecionado = None
             self.card_selecionado = None
+
+            # Fecha a janela de relatório se estiver aberta
+            if hasattr(self, 'janela_relatorio') and self.janela_relatorio:
+                self.janela_relatorio.destroy()
+            
             self.listar()  # Atualiza a lista visual
 
         except Exception as e:

@@ -1,1 +1,1 @@
-estado_saude.set("Selecione o estado de saúde")
+
