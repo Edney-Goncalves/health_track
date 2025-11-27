@@ -1,37 +1,46 @@
-import tkinter as tk
-from tkinter import ttk
-from PIL import Image, ImageTk
-from services.pacientes_service import PacienteService
+import customtkinter as ctk
 from tkinter import messagebox
+from core.repository import PacienteRepository
 
-
-class ExcluirScreen(tk.Frame):
+class ExcluirScreen(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        self.configure(bg="white")
-        self.build_logo()
+        self.configure(fg_color="#AEE1F5")
 
-        tk.Label(self, text="Excluir Paciente", font=("Verdana", 12, "bold"),
-                 fg="blue", bg="white").place(x=230, y=140)
+        titulo = ctk.CTkLabel(self, text="Excluir Paciente", text_color="#0B395C", font=("Arial",18,"bold"))
+        titulo.pack(pady=12)
 
-        tk.Label(self, text="CPF", bg="white").place(x=180, y=190)
-        self.cpf = tk.Entry(self, width=25)
-        self.cpf.place(x=260, y=190)
+        info = ctk.CTkLabel(self, text="Selecione um paciente na tela de lista e depois venha aqui para confirmar a exclusão.", font=("Arial",12))
+        info.pack(pady=8)
 
-        tk.Button(self, text="Excluir", width=18,
-                  command=self.excluir).place(x=240, y=260)
-        tk.Button(self, text="Voltar", width=10,
-                  command=lambda: controller.show_screen("home")).place(x=10, y=360)
+        botoes = ctk.CTkFrame(self, fg_color="transparent")
+        botoes.pack(pady=12)
+        btn_confirm = ctk.CTkButton(botoes, text="Confirmar Exclusão", fg_color="#d9534f", hover_color="#c9302c", command=self.confirmar, width=180, height=40)
+        btn_confirm.pack(side="left", padx=8)
+        btn_cancel = ctk.CTkButton(botoes, text="Cancelar", command=lambda: controller.show_screen("lista"))
+        btn_cancel.pack(side="left", padx=8)
 
-    def excluir(self):
-        PacienteService.excluir(self.cpf.get())
+    def on_show(self):
+        p = self.controller.selected_patient
+        if not p:
+            messagebox.showwarning("Nenhum paciente", "Selecione um paciente na lista antes de excluir.")
+            self.controller.show_screen("lista")
 
-    def build_logo(self):
+    def confirmar(self):
+        p = self.controller.selected_patient
+        if not p:
+            messagebox.showerror("Erro", "Nenhum paciente selecionado.")
+            return
+
+        resposta = messagebox.askyesno("Confirmar Exclusão", f"Tem certeza que deseja excluir:\n\n{p['name']} (CPF: {p['cpf']})")
+        if not resposta:
+            return
+
         try:
-            image = Image.open("HEALTH TRACK.png").convert("RGBA")
-            image = image.resize((120, 120))
-            self.logo_img = ImageTk.PhotoImage(image)
-            tk.Label(self, image=self.logo_img, bg="white").place(x=250, y=0)
-        except:
-            tk.Label(self, text="[LOGO]", bg="white").place(x=270, y=20)
+            PacienteRepository.excluir(p["cpf"])
+            messagebox.showinfo("Sucesso", f"Paciente {p['name']} excluído")
+            self.controller.selected_patient = None
+            self.controller.show_screen("lista")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Falha ao excluir:\n{e}")

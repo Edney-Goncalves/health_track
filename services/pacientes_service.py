@@ -1,50 +1,21 @@
 from core.repository import PacienteRepository
 
-class PacienteService:
+class PacienteServiceClass:
+    def __init__(self):
+        self.repo = PacienteRepository()
+        self.repo.create_table()  # garante criação imediata
 
-    # -------------------------------------
-    # CADASTRAR PACIENTE
-    # -------------------------------------
-    @staticmethod
-    def cadastrar(dados):
-        existente = PacienteRepository.buscar_por_cpf(dados["cpf"])
-        if existente:
-            raise Exception("Paciente já cadastrado!")
+    def adicionar(self, name, cpf, age):
+        return self.repo.adicionar(name, cpf, age)
 
-        PacienteRepository.inserir({
-            "name": dados["name"],
-            "cpf": dados["cpf"],
-            "rg": dados["rg"],
-            "age": dados["age"],
-            "gender": dados["gender"],
-            "health_state": dados["health_state"],
-            "disease_history": dados.get("disease_history"),
-        })
+    def listar(self):
+        return self.repo.listar()
 
-    # -------------------------------------
-    # LISTAR
-    # -------------------------------------
-    @staticmethod
-    def listar():
-        pacientes = PacienteRepository.listar()
-        return pacientes if pacientes else []
+    def atualizar(self, cpf, campo, valor):
+        return self.repo.atualizar(cpf, campo, valor)
 
-    # -------------------------------------
-    # ATUALIZAR
-    # -------------------------------------
-    @staticmethod
-    def atualizar(cpf, campo, valor):
-        if not PacienteRepository.buscar_por_cpf(cpf):
-            raise Exception("CPF não encontrado.")
+    def excluir(self, cpf):
+        return self.repo.excluir(cpf)
 
-        PacienteRepository.atualizar(cpf, campo, valor)
-
-    # -------------------------------------
-    # EXCLUIR
-    # -------------------------------------
-    @staticmethod
-    def excluir(cpf):
-        if not PacienteRepository.buscar_por_cpf(cpf):
-            raise Exception("CPF não encontrado.")
-
-        PacienteRepository.excluir(cpf)
+# INSTÂNCIA ÚNICA
+PacienteService = PacienteServiceClass()

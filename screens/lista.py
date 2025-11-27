@@ -1,93 +1,76 @@
-import tkinter as tk
-from tkinter import ttk
-from PIL import Image, ImageTk
-from services.pacientes_service import PacienteService
+import customtkinter as ctk
+from tkinter import messagebox
+from core.repository import PacienteRepository
 
-
-class ListaScreen(tk.Frame):
+class ListaScreen(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        super().__init__(parent, bg="white")
+        super().__init__(parent)
         self.controller = controller
+        self.configure(fg_color="#AEE1F5")
+        self.cards = []
+        self.card_selected = None
 
-        self.build_logo()
+        header = ctk.CTkLabel(self, text="Lista de Pacientes", text_color="#FFFFFF", font=("Arial",20,"bold"))
+        header.pack(pady=10)
 
-        tk.Label(
-            self,
-            text="Lista de Pacientes",
-            font=("Verdana", 12, "bold"),
-            fg="blue",
-            bg="white"
-        ).place(x=220, y=140)
+        self.scroll_frame = ctk.CTkScrollableFrame(self, width=700, height=480)
+        self.scroll_frame.pack(pady=6, padx=12, fill="both", expand=True)
 
-        # Definição das colunas exibidas
-        colunas = ("name", "cpf", "age")
+    def on_show(self):
+        self.refresh_list()
 
-        self.tabela = ttk.Treeview(
-            self,
-            columns=colunas,
-            show="headings",
-            height=10
-        )
+    def refresh_list(self):
+        # limpa
+        for widget in self.scroll_frame.winfo_children():
+            widget.destroy()
+        self.cards = []
+        self.card_selected = None
+        self.controller.selected_patient = None
 
-        # Cabeçalhos
-        self.tabela.heading("name", text="Nome")
-        self.tabela.heading("cpf", text="CPF")
-        self.tabela.heading("age", text="Idade")
-
-        # Largura das colunas
-        self.tabela.column("name", width=180)
-        self.tabela.column("cpf", width=120)
-        self.tabela.column("age", width=80)
-
-        self.tabela.place(x=80, y=180)
-
-        # Botões
-        tk.Button(
-            self,
-            text="Atualizar Lista",
-            width=18,
-            command=self.carregar
-        ).place(x=240, y=360)
-
-        tk.Button(
-            self,
-            text="Voltar",
-            width=10,
-            command=lambda: controller.show_screen("home")
-        ).place(x=10, y=360)
-
-        # Carrega inicialmente
-        self.carregar()
-
-    def carregar(self):
-        """Recarrega a tabela com dados atualizados do banco."""
-
-        # Limpa a tabela antes de inserir novos dados
-        for item in self.tabela.get_children():
-            self.tabela.delete(item)
-
-        # Busca lista de pacientes do Service
-        dados = PacienteService.listar() or []
-
-        # Preenche a tabela
-        for p in dados:
-            # Garante que as chaves existem no dicionário
-            nome = p.get("name", "")
-            cpf = p.get("cpf", "")
-            idade = p.get("age", "")
-
-            self.tabela.insert(
-                "",
-                tk.END,
-                values=(nome, cpf, idade)
-            )
-
-    def build_logo(self):
-        """Carrega a logo (ou texto caso falhe)."""
         try:
-            image = Image.open("HEALTH TRACK.png").convert("RGBA")
-            image = image.resize((120, 120))
-            self.logo_img = ImageTk.PhotoImage(image)
-            tk.Label(self, image=self.logo_img, bg="white").place(x=250, y=0)
-        except Exception:
-            tk.Label(self, text="[LOGO]", bg="white").place(x=270, y=20)
+            pacientes = PacienteRepository.listar()
+        except Exception as e:
+            messagebox.showerror("Erro", f"Falha ao carregar pacientes:\n{e}")
+            return
+
+        if not pacientes:
+            ctk.CTkLabel(self.scroll_frame, text="Nenhum paciente cadastrado!", font=("Arial",14)).pack(pady=20)
+            return
+
+        for i, p in enumerate(pacientes):
+            card = ctk.CTkFrame(self.scroll_frame, corner_radius=12, fg_color="#E8F1FF")
+            card.pack(fill="x", pady=8, padx=8)
+            self.cards.append(card)
+
+            nome = ctk.CTkLabel(card, text=p["name"], text_color="#0B395C", font=("Arial",16,"bold"))
+            nome.pack(anchor="w", padx=10, pady=(8,2))
+
+            info = ctk.CTkLabel(card, text=f"Idade: {p['age']} | CPF: {p['cpf']} | RG: {p['rg']}", text_color="#000000", font=("Arial",12))
+            info.pack(anchor="w", padx=10, pady=(0,6))
+
+            info2 = ctk.CTkLabel(card, text=f"Gênero: {p['gender']} | Saúde: {p['health_state']}", text_color="#000000", font=("Arial",12))
+            info2.pack(anchor="w", padx=10, pady=(0,10))
+
+            # binds
+            def on_enter(e, f=card):
+                if f != self.card_selected:
+                    f.configure(fg_color="#54ACF0")
+            def on_leave(e, f=card):
+                if f != self.card_selected:
+                    f.configure(fg_color="#E8F1FF")
+            def on_click(e, pac=p, f=card):
+                self.select_card(pac, f)
+
+            for w in (card, nome, info, info2):
+                w.bind("<Enter>", on_enter)
+                w.bind("<Leave>", on_leave)
+                w.bind("<Button-1>", on_click)
+
+    def select_card(self, paciente, card_widget):
+        # restaura todos
+        for c in self.cards:
+            c.configure(fg_color="#E8F1FF")
+        card_widget.configure(fg_color="#54ACF0")
+        self.card_selected = card_widget
+        self.controller.selected_patient = paciente
+        print(f"Selecionado: {paciente['name']} - CPF {paciente['cpf']}")

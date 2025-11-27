@@ -1,112 +1,79 @@
-import json
-from core.database import db_connection
+import sqlite3
+from database.connection import get_connection
 
 class PacienteRepository:
 
-    # -------------------------------------
-    # LISTAR TODOS
-    # -------------------------------------
     @staticmethod
     def listar():
-        with db_connection() as (conn, cursor):
-            cursor.execute("""
-                SELECT 
-                    id, name, cpf, rg, age, gender, 
-                    health_state, disease_history
-                FROM pacient
-                ORDER BY id ASC
-            """)
-            rows = cursor.fetchall()
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT name, cpf, age, rg, gender, health_state, disease_history FROM pacientes ORDER BY name ASC;")
+        resultados = cur.fetchall()
 
-            return [
-                {
-                    "id": r[0],
-                    "name": r[1],
-                    "cpf": r[2],
-                    "rg": r[3],
-                    "age": r[4],
-                    "gender": r[5],
-                    "health_state": r[6],
-                    "disease_history": r[7],
-                }
-                for r in rows
-            ]
+        lista = []
+        for r in resultados:
+            lista.append({
+                "name": r[0],
+                "cpf": r[1],
+                "age": r[2],
+                "rg": r[3],
+                "gender": r[4],
+                "health_state": r[5],
+                "disease_history": r[6],
+            })
+        return lista
 
-    # -------------------------------------
-    # BUSCAR POR CPF
-    # -------------------------------------
     @staticmethod
     def buscar_por_cpf(cpf):
-        with db_connection() as (conn, cursor):
-            cursor.execute("""
-                SELECT 
-                    id, name, cpf, rg, age, gender, 
-                    health_state, disease_history
-                FROM pacient
-                WHERE cpf = %s
-            """, (cpf,))
-            r = cursor.fetchone()
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT name, cpf, age, rg, gender, health_state, disease_history FROM pacientes WHERE cpf = ?;", (cpf,))
+        r = cur.fetchone()
+        if not r:
+            return None
+        return {
+            "name": r[0],
+            "cpf": r[1],
+            "age": r[2],
+            "rg": r[3],
+            "gender": r[4],
+            "health_state": r[5],
+            "disease_history": r[6],
+        }
 
-            return (
-                {
-                    "id": r[0],
-                    "name": r[1],
-                    "cpf": r[2],
-                    "rg": r[3],
-                    "age": r[4],
-                    "gender": r[5],
-                    "health_state": r[6],
-                    "disease_history": r[7],
-                }
-                if r else None
-            )
-
-    # -------------------------------------
-    # INSERIR
-    # -------------------------------------
     @staticmethod
     def inserir(dados):
-        with db_connection() as (conn, cursor):
-            cursor.execute("""
-                INSERT INTO pacient (
-                    name, cpf, rg, age, gender, health_state, disease_history
-                )
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, (
-                dados["name"],
-                dados["cpf"],
-                dados["rg"],
-                dados["age"],
-                dados["gender"],
-                dados["health_state"],
-                json.dumps(dados["disease_history"]) 
-                    if dados.get("disease_history") 
-                    else None
-            ))
+        conn = get_connection()
+        cur = conn.cursor()
+        query = """
+            INSERT INTO pacientes (name, cpf, age, rg, gender, health_state, disease_history)
+            VALUES (?, ?, ?, ?, ?, ?, ?);
+        """
+        cur.execute(query, (
+            dados["name"],
+            dados["cpf"],
+            dados["age"],
+            dados["rg"],
+            dados["gender"],
+            dados["health_state"],
+            str(dados["disease_history"])  # armazenado como texto
+        ))
+        conn.commit()
+        return cur.lastrowid
 
-    # -------------------------------------
-    # ATUALIZAR QUALQUER CAMPO
-    # -------------------------------------
     @staticmethod
     def atualizar(cpf, campo, valor):
-        with db_connection() as (conn, cursor):
+        conn = get_connection()
+        cur = conn.cursor()
+        query = f"UPDATE pacientes SET {campo} = ? WHERE cpf = ?;"
+        cur.execute(query, (valor, cpf))
+        conn.commit()
+        return cur.rowcount
 
-            # If updating JSONB
-            if campo == "disease_history":
-                valor = json.dumps(valor)
-
-            cursor.execute(
-                f"UPDATE pacient SET {campo} = %s WHERE cpf = %s",
-                (valor, cpf)
-            )
-
-    # -------------------------------------
-    # EXCLUIR
-    # -------------------------------------
     @staticmethod
     def excluir(cpf):
-        with db_connection() as (conn, cursor):
-            cursor.execute(
-                "DELETE FROM pacient WHERE cpf = %s",
-                (cpf,)
-            )
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM pacientes WHERE cpf = ?;", (cpf,))
+        conn.commit()
+        return cur.rowcount

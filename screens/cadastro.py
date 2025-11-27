@@ -1,90 +1,105 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
-from PIL import Image, ImageTk
-from services.pacientes_service import PacienteService
+import customtkinter as ctk
+from tkinter import messagebox
+from core.repository import PacienteRepository
 
-class CadastroScreen(tk.Frame):
+class CadastroScreen(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        self.configure(bg="white")
+        self.configure(fg_color="#AEE1F5")
 
-        self.build_logo()
+        titulo = ctk.CTkLabel(self, text="Cadastro de Pacientes", text_color="#0B395C", font=("Arial",18,"bold"))
+        titulo.pack(pady=12)
 
-        tk.Label(self, text="Cadastro de Paciente", font=("Verdana", 12, "bold"),
-                 fg="blue", bg="white").place(x=220, y=140)
+        form = ctk.CTkFrame(self, fg_color="white")
+        form.pack(padx=18, pady=8, fill="x")
 
-        # -------- CAMPOS --------
+        # campos
+        self.nome = ctk.CTkEntry(form, placeholder_text="Nome completo", height=36)
+        self.nome.pack(fill="x", padx=12, pady=(12,6))
 
-        tk.Label(self, text="Nome", bg="white").place(x=180, y=180)
-        self.nome = tk.Entry(self, width=25)
-        self.nome.place(x=300, y=180)
+        self.idade = ctk.CTkEntry(form, placeholder_text="Idade", height=36)
+        self.idade.pack(fill="x", padx=12, pady=6)
 
-        tk.Label(self, text="CPF", bg="white").place(x=180, y=210)
-        self.cpf = tk.Entry(self, width=25)
-        self.cpf.place(x=300, y=210)
+        self.cpf = ctk.CTkEntry(form, placeholder_text="CPF (somente números)", height=36)
+        self.cpf.pack(fill="x", padx=12, pady=6)
 
-        tk.Label(self, text="RG", bg="white").place(x=180, y=240)
-        self.rg = tk.Entry(self, width=25)
-        self.rg.place(x=300, y=240)
+        self.rg = ctk.CTkEntry(form, placeholder_text="RG", height=36)
+        self.rg.pack(fill="x", padx=12, pady=6)
 
-        tk.Label(self, text="Idade", bg="white").place(x=180, y=270)
-        self.idade = tk.Entry(self, width=25)
-        self.idade.place(x=300, y=270)
+        self.genero = ctk.CTkComboBox(form, values=["Masculino","Feminino","Não Binário"])
+        self.genero.set("Selecione")
+        self.genero.pack(fill="x", padx=12, pady=6)
 
-        tk.Label(self, text="Gênero", bg="white").place(x=180, y=300)
-        self.genero = ttk.Combobox(self, values=["Masculino", "Feminino", "Outro"], width=22)
-        self.genero.place(x=300, y=300)
+        self.saude = ctk.CTkComboBox(form, values=["Não Urgência","Urgência","Emergência"])
+        self.saude.set("Selecione o estado de saúde")
+        self.saude.pack(fill="x", padx=12, pady=6)
 
-        tk.Label(self, text="Estado de Saúde", bg="white").place(x=180, y=330)
-        self.estado_saude = tk.Entry(self, width=25)
-        self.estado_saude.place(x=300, y=330)
+        self.historico = ctk.CTkTextbox(form, height=100, wrap="word")
+        self.historico.pack(fill="both", padx=12, pady=(6,12))
 
-        tk.Label(self, text="Histórico de Doenças (JSON)", bg="white").place(x=180, y=360)
-        self.historico = tk.Entry(self, width=25)
-        self.historico.insert(0, "[]")
-        self.historico.place(x=300, y=360)
+        botoes = ctk.CTkFrame(self, fg_color="transparent")
+        botoes.pack(pady=10)
+        btn_salvar = ctk.CTkButton(botoes, text="Salvar Cadastro", command=self.salvar, width=160, height=40)
+        btn_salvar.pack(side="left", padx=8)
+        btn_cancel = ctk.CTkButton(botoes, text="Cancelar", fg_color="#6c757d", hover_color="#c9302c", command=lambda: controller.show_screen("home"))
+        btn_cancel.pack(side="left", padx=8)
 
-        # -------- BOTÕES --------
-
-        tk.Button(self, text="Salvar", width=18, command=self.salvar).place(x=240, y=400)
-        tk.Button(self, text="Voltar", width=10,
-                  command=lambda: controller.show_screen("home")).place(x=10, y=360)
+    def validar(self, dados):
+        erros = []
+        if not dados.get("name") or len(dados["name"].strip()) < 3:
+            erros.append("Nome inválido")
+        try:
+            idade = int(dados.get("age",""))
+            if idade < 0 or idade > 150:
+                erros.append("Idade inválida")
+        except Exception:
+            erros.append("Idade inválida")
+        cpf = ''.join(filter(str.isdigit, dados.get("cpf","")))
+        if len(cpf) != 11:
+            erros.append("CPF deve ter 11 dígitos")
+        if dados.get("gender") not in ["Masculino","Feminino","Não Binário"]:
+            erros.append("Gênero inválido")
+        if dados.get("health_state") not in ["Não Urgência","Urgência","Emergência"]:
+            erros.append("Estado de saúde inválido")
+        return erros
 
     def salvar(self):
         dados = {
-            "name": self.nome.get(),
-            "cpf": self.cpf.get(),
-            "rg": self.rg.get(),
-            "age": self.idade.get(),
+            "name": self.nome.get().strip(),
+            "age": self.idade.get().strip(),
+            "cpf": ''.join(filter(str.isdigit, self.cpf.get())),
+            "rg": self.rg.get().strip(),
             "gender": self.genero.get(),
-            "health_state": self.estado_saude.get(),
-            "disease_history": self.historico.get()
+            "health_state": self.saude.get(),
+            # armazenamos histórico como lista com um único texto (repository trata como json)
+            "disease_history": [self.historico.get("1.0","end-1c").strip()] 
         }
 
-        try:
-            PacienteService.cadastrar(dados)
-            messagebox.showinfo("Sucesso", "Paciente cadastrado com sucesso!")
-            self.limpar_campos()
+        erros = self.validar(dados)
+        if erros:
+            messagebox.showerror("Erros no formulário", "\n".join(erros))
+            return
 
+        try:
+            # verifica cpf existente
+            existing = PacienteRepository.buscar_por_cpf(dados["cpf"])
+            if existing:
+                messagebox.showerror("Erro", "CPF já cadastrado")
+                return
+
+            PacienteRepository.inserir(dados)
+            messagebox.showinfo("Sucesso", f"Paciente {dados['name']} cadastrado")
+            # limpa campos
+            self.nome.delete(0, "end")
+            self.idade.delete(0, "end")
+            self.cpf.delete(0, "end")
+            self.rg.delete(0, "end")
+            self.genero.set("Selecione")
+            self.saude.set("Selecione o estado de saúde")
+            self.historico.delete("1.0", "end")
+
+            # retorna para lista atualizada
+            self.controller.show_screen("lista")
         except Exception as e:
-            messagebox.showerror("Erro", str(e))
-
-    def limpar_campos(self):
-        self.nome.delete(0, tk.END)
-        self.cpf.delete(0, tk.END)
-        self.rg.delete(0, tk.END)
-        self.idade.delete(0, tk.END)
-        self.genero.set("")
-        self.estado_saude.delete(0, tk.END)
-        self.historico.delete(0, tk.END)
-        self.historico.insert(0, "[]")
-
-    def build_logo(self):
-        try:
-            image = Image.open("HEALTH TRACK.png").convert("RGBA")
-            image = image.resize((120, 120))
-            self.logo_img = ImageTk.PhotoImage(image)
-            tk.Label(self, image=self.logo_img, bg="white").place(x=250, y=0)
-        except:
-            tk.Label(self, text="[LOGO]", bg="white").place(x=270, y=20)
+            messagebox.showerror("Erro", f"Falha ao salvar:\n{e}")
