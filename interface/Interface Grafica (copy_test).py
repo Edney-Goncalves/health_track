@@ -16,8 +16,7 @@ import os
 import time
 import json
 import traceback
-from PIL import Image, ImageTk 
-import psycopg2
+from PIL import Image, ImageTk
 import sqlite3
 
 # ----------------- JANELA PRINCIPAL -----------------
@@ -197,110 +196,11 @@ class HEALTHTRACK_APP (ctk.CTk):
 
         self.Tela_Home()
 
-        self.verificar_estrutura_banco()
-        if not os.path.exists('interface/data.db'):
-            self.migrar_para_sqlite()
-
-    def migrar_para_sqlite(self):
-        # Migra dados do arquivo txt para o bacon SQLite
-        try:
-            # Verifica se já existem dados no SQLite
-            conect = self.conectar_banco()
-            cursor = conect.cursor()
-            cursor.execute('SELECT COUNT(*) FROM pacientes')
-            count = cursor.fetchone()[0]
-
-            if count > 0:
-                print(F"Banco já contém {count} pacientes, pulando migração")
-                conect.close()
-                return True
-            
-            # Carrega pacientes do txt
-            pacientes_txt = self.carregar_pacientes_txt()
-
-            if not pacientes_txt:
-                print("Nenhum dado para migrar do TXT")
-                conect.close()
-                return True
-            
-            print(F"Migrando {len(pacientes_txt)} pacientes do TXT para SQLite...")
-
-            # Insere os dados
-            for paciente in pacientes_txt:
-                try:
-                    cursor.execute(''' 
-                        INSERT OR IGNORE INTO pacientes
-                        (name, age, cpf, rg, gender, health_state, disease_history)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (
-                        paciente['nome'],
-                        int(paciente['idade']),
-                        paciente['cpf'],
-                        paciente['rg'],
-                        paciente['genero'],
-                        paciente['saude'],
-                        paciente['historico'],
-                        paciente.get('observacoes', '')
-                    ))
-                except sqlite3.IntegrityError as e:
-                    print(F"Paciente duplicado ignorado: {paciente['nome']} - {e}")
-                    continue
-                except ValueError:
-                    print(F"Idade inválida para: {paciente['nome']}")
-                    continue        
-
-            conect.commit()
-            conect.close()
-            print(F"Migração concluida: {len(pacientes_txt)} pacientes migrados")
-            return True
-
-        except Exception as e:
-            print(F"Erro na migração: {e}")
-            traceback.print_exc()
-            return False
-        
-    def conectar_banco(self):
-        # Conecta ao banco com tratamento de erro
-        try:
-            conect = sqlite3.connect('interface/data.db', timeout=10)
-            return conect
-        except sqlite3.OperationalError as e:
-            print(F"Erro de conexão: {e}")
-            # Tenta novamente após um tempo
-            time.sleep(0.1)
-            return sqlite3.connect('interface/data.db', timeout=10)
-        
-    def verificar_estrutura_banco(self):
-        # Verifica a estrutura atual do banco para debug
-        try:
-            conect = sqlite3.self.conectar_banco()
-            cursor = conect.cursor()
-
-            # Verifica tabelas existentes
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            tabelas = cursor.fetchall()
-            print("Tabelas no banco:", tabelas)
-
-            # Verifica estrutura da tabela pacientes
-            cursor.execute("PRAGMA table_info(pacientes)")
-            colunas = cursor.fetchall()
-            print("Colunas da tabela pacientes:")
-            for coluna in colunas:
-                print(F" {coluna[1]} ({coluna[2]})")
-
-            # Verifica dados existentes
-            cursor.execute("SELECT COUNT(*) FROM pacientes")
-            count = cursor.fetchone()[0]
-            print(F"Total de pacientes no banco: {count}")
-
-            conect.close()
-        except Exception as e:
-            print(F"Erro ao verificar estrutura: {e}") 
-
-    def carregar_pacientes_txt(self):
-        # Função temporária para carregar do txt (igual a "carregar_pacientes")
+    def carregar_pacientes(self):
+        # Carrega do novo local
         pacientes = []
         try:
+            # Tenta carregar do novo local
             caminho_arquivo = "interface/dados.txt"
 
             if os.path.exists(caminho_arquivo):
@@ -324,46 +224,40 @@ class HEALTHTRACK_APP (ctk.CTk):
                                     'observacoes': dados[7] if len(dados) > 7 else ''
                                 }
                                 pacientes.append(paciente)
-                print(F"Carregados {len(pacientes)} pacientes do TXT") # Debug
+                print(F"Carregados {len(pacientes)} pacientes de: {caminho_arquivo}") # Debug
         except Exception as e:
-            print(f"Erro ao carregar do TXT: {e}")
+            print(f"Erro ao carregar pacientes: {e}")
         return pacientes
-
-    def carregar_pacientes(self):
-        # Carrega pacientes do banco SQLite
-        pacientes = []
+    
+    def salvar_pacientes(self, pacientes):
+        # Salva a lista de dicionários no arquivo
         try:
-            # Conecta ao SQLite
-            conect = self.conectar_banco()
-            cursor = conect.cursor()
-            
-            # Agora busca os dados
-            cursor.execute(''' 
-                SELECT name, age, cpf, rg, gender, health_state, disease_history
-                FROM pacientes ORDER BY name
-                ''')
-            
-            for row in cursor.fetchall():
-                paciente = {
-                    'nome': row[0],
-                    'idade': str(row[1]),
-                    'cpf': row[2],
-                    'rg': row[3],
-                    'genero': row[4],
-                    'saude': row[5],
-                    'historico': row[6],
-                    'observacoes': ''
-                }
-                pacientes.append(paciente)
-            
-            conect.close()
-            print(F"Carregados {len(pacientes)} pacientes do SQLite")
+            # Salva na mesma pasta do seu script Python
+            caminho_arquivo = "interface/dados.txt"
+
+            print(F"Tentando salvar em: {os.path.abspath(caminho_arquivo)}")
+
+            with open(caminho_arquivo, "w", encoding="utf-8") as arquivo:
+                for paciente in pacientes:
+                    linha = [
+                        paciente.get('nome', ''),
+                        paciente.get('idade', ''),
+                        paciente.get('cpf', ''),
+                        paciente.get('rg', ''),
+                        paciente.get('genero', ''),
+                        paciente.get('saude', ''),
+                        paciente.get('historico', ''),
+                        paciente.get('observacoes', '')
+                    ]
+                    arquivo.write(",".join(linha) + "\n")
+
+            print(f"Salvos {len(pacientes)} pacientes em: {caminho_arquivo}")
+            return True
         
         except Exception as e:
-            print(F"Erro ao carregar pacientes do SQLite: {e}")
-            traceback.print_exc()
-
-        return pacientes
+            print(f"Erro detalhado ao salvar: {e}")
+            messagebox.showerror("Erro", f"Erro ao salvar dados: {str(e)}")
+            return False           
 
     def mostrar_atalhos(self):
         # Mostra os botões de atalho no menu
@@ -634,92 +528,61 @@ class HEALTHTRACK_APP (ctk.CTk):
         return rg
 
     def salvar_cadastro(self, nome, idade, Cpf, Rg, genero, estado_saude, historico_doencas, janela):
-        # Salva o novo diretamente no SQLite
-        try:
-            # Coleta de dados
-            dados= {
-                'nome': nome.get().strip(),
-                'idade': idade.get().strip(),
-                'cpf': self.formatar_cpf(Cpf.get().strip()),
-                'rg': self.formatar_rg(Rg.get().strip()),
-                'genero': genero.get().strip(),
-                'saude': estado_saude.get().strip(),
-                'historico': historico_doencas.get().strip(),
-                'observacoes': ''
-            }
+        # Salva o novo paciente no arquivo
 
-            # Validações
-            erros = self.validar_cadastro(dados)
-            if erros:
-                mensagem_erro = "Por favor, corrija os seguintes erros:\n\n" + "\n".join(F"{erro}" for erro in erros)
-                messagebox.showerror("Erro no Cadastro", mensagem_erro)
-                return
-            
-            # Verifica se o CPF já existe
-            if self.verificar_cpf_existente_sqlite(dados['cpf']):
-                messagebox.showerror("Erro", "CPF já cadastrado no sistema!")
-                return
-            
-            # Verifica se o RG já existe
-            if self.verificar_rg_existente_sqlite(dados['rg']):
-                messagebox.showerror("Erro", "RG já cadastrado no sistema!")
-                return
-            
-            # Salva no SQLite
-            conect = self.conectar_banco()
-            cursor = conect.cursor()
+        # Coleta de dados
+        dados= {
+            'nome': nome.get().strip(),
+            'idade': idade.get().strip(),
+            'cpf': Cpf.get().strip(),
+            'rg': Rg.get().strip(),
+            'genero': genero.get().strip(),
+            'saude': estado_saude.get().strip(),
+            'historico': historico_doencas.get().strip(),
+            'observacoes': ''
+        }
 
-            cursor.execute(''' 
-                    INSERT INTO pacientes
-                    (name, age, cpf, rg, gender, health_state, disease_history)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    dados['nome'], 
-                    int(dados['idade']), 
-                    dados['cpf'], 
-                    dados['rg'], 
-                    dados['genero'],
-                    dados['saude'], 
-                    dados['historico'], 
-            ))
+        # Validações
+        erros = self.validar_cadastro(dados)
 
-            conect.commit()
-            conect.close()
-
-            messagebox.showinfo("Sucesso", F"Paciente {dados['nome']} cadastrado com sucesso!")
-            janela.destroy()
-            self.listar()
+        if erros:
+            mensagem_erro = "Por favor, corrija os seguintes erros:\n\n" + "\n".join(F"{erro}" for erro in erros)
+            messagebox.showerror("Erro no Cadastro", mensagem_erro)
+            return
         
-        except sqlite3.IntegrityError:
-            messagebox.showerror("Erro", "CPF ou RG já cadastrado!")
-        except ValueError:
-            messagebox.showerror("Erro", "Idade deve ser um número!")
+        # Verifica se o CPF já existe
+        if self.verificar_cpf_existente(dados['cpf']):
+            messagebox.showerror("Erro", "CPF já cadastrado no sistema!")
+            return
+        
+        # Verifica se o RG já existe
+        if self.verificar_rg_existente(dados['rg']):
+            messagebox.showerror("Erro", "RG já cadastrado no sistema!")
+            return
+        
+        try:
+            # Formata o CPF
+            dados['cpf'] = self.formatar_cpf(dados['cpf'])
+
+            # Formata o RG
+            dados['rg'] = self.formatar_rg(dados['rg'])
+
+            # Carrega pacientes existentes
+            pacientes = self.carregar_pacientes()
+                
+            # Adiciona novo paciente
+            pacientes.append(dados)
+
+            # Salva no arquivo
+            if self.salvar_pacientes(pacientes):
+                messagebox.showinfo("Sucesso", F"Paciente {dados['nome']} cadastrado com sucesso!")
+                janela.destroy()
+                self.listar()  # Atualiza a lista
+            else:
+                messagebox.showerror("Erro", "Erro ao salvar o paciente!")
+
         except Exception as e:
             messagebox.showerror("Erro", F"Erro ao cadastrar: {str(e)}")
-
-    def verificar_cpf_existente_sqlite(self, cpf):
-        # Verifica se CPF existe no SQLite
-        try:
-            conect = self.conectar_banco()
-            cursor = conect.cursor()
-            cursor.execute('SELECT COUNT(*) FROM pacientes WHERE cpf = ?', (cpf))
-            count = cursor.fetchone()[0]
-            conect.close()
-            return count > 0
-        except:
-            return False
-        
-    def verificar_rg_existente_sqlite(self, rg):
-        # Verifica se RG existe no SQLite
-        try:
-            conect = self.conectar_banco()
-            cursor = conect.cursor()
-            cursor.execute('SELECT COUNT(*) FROM pacientes WHERE rg = ?', (rg))
-            count = cursor.fetchone()[0]
-            conect.close()
-            return count > 0
-        except:
-            return False
 
     def configurar_validacoes_tempo_real(self, nome, idade, cpf, rg):
         # Configura validações em tempo real nos campos
@@ -1178,64 +1041,54 @@ class HEALTHTRACK_APP (ctk.CTk):
             pacientes = self.carregar_pacientes()
 
             # Encontra o paciente atual
+            paciente_original = None
             paciente_index = -1
             for i, paciente in enumerate(pacientes):
                 if paciente['cpf'] == self.paciente_selecionado['cpf']:
+                    paciente_original = paciente
                     paciente_index = i
                     break
 
-            if paciente_index == -1:
+            if not paciente_original:
                 messagebox.showerror("Erro", "Paciente não encontrado!")
                 return
             
-            # Atualiza os dados do paciente
-            paciente_atualizado = pacientes[paciente_index].copy()
+            # Cria cópia dos dados originais
+            dados_editados = self.dados_originais.copy()
 
+            # Atualiza os campos editados (incluindo observações)
             for campo, widget in self.campos_edicao_rapida.items():
                 if isinstance(widget, ctk.CTkTextbox):
                     # Para CTktextbox, usa get("1.0", "end-1c")
-                    paciente_atualizado[campo] = widget.get("1.0", "end-1c").strip()
-                else:
+                    dados_editados[campo] = widget.get("1.0", "end-1c").strip()
+                elif isinstance(widget, (ctk.CTkEntry, ctk.CTkComboBox)):
                     # Para Entry e ComboBox, usa get()
-                    paciente_atualizado[campo] = widget.get().strip()
+                    dados_editados[campo] = widget.get().strip()
+                else:
+                    # Para outros tipos de widget
+                    dados_editados[campo] = str(widget.get().strip())
 
             # Validações
-            erros = self.validar_cadastro(paciente_atualizado)
+            erros = self.validar_cadastro(dados_editados)
             if erros:
                 mensagem_erro = "Erros encontrados:\n\n" + "\n".join(F"• {erro}" for erro in erros)
                 messagebox.showerror("Erro na Edição", mensagem_erro)
                 return
             
-            # Salva no SQLite usando nomes de colunas corretos
-            conect = self.conectar_banco()
-            cursor = conect.cursor()
+            # Atualiza na lista de pacientes
+            pacientes[paciente_index] = dados_editados
 
-            cursor.execute(''' 
-                UPDATE pacientes
-                SET name = ?, age = ?, cpf = ?, rg = ?, gender = ?, health_state = ?, disease_history = ?
-                WHERE cpf = ?
-            ''', (
-                paciente_atualizado['nome'],
-                int(paciente_atualizado['idade']),
-                paciente_atualizado['cpf'],
-                paciente_atualizado['rg'],
-                paciente_atualizado['genero'],
-                paciente_atualizado['saude'],
-                paciente_atualizado['historico'],
-                self.paciente_atualizado['cpf']
-            ))
-
-            conect.commit()
-            conect.close()
-
-            messagebox.showinfo("Sucesso", "Dados atualizados com sucesso!")
-            self.paciente_selecionado = paciente_atualizado
-            janela_edicao.destroy()
-
-            # Atualiza a interface
-            if hasattr(self, 'janela_relatorio') and self.janela_relatorio:
-                self.janela_relatorio.destroy()
-            self.listar()
+            # Salva no arquivo
+            if self.salvar_pacientes(pacientes):
+                messagebox.showinfo("Sucesso", "Dados atualizados com sucesso!")
+                self.paciente_selecionado = dados_editados
+                janela_edicao.destroy()
+                # Atualiza a interface
+                if hasattr(self, 'janela_relatorio') and self.janela_relatorio:
+                    self.janela_relatorio.destroy()
+                self.listar()
+            else:
+                messagebox.showerror("Erro", F"Erro ao salvar os dados!")
 
         except Exception as e:
             messagebox.showerror("Erro", F"Erro ao salvar: {str(e)}")
@@ -1296,7 +1149,7 @@ class HEALTHTRACK_APP (ctk.CTk):
                     break
 
             # Salva no arquivo
-            if self.salvar_edicao_rapida(pacientes):
+            if self.salvar_pacientes(pacientes):
                 messagebox.showinfo("Sucesso", "Observações salvas com sucesso!")
                 # Atualiza o paciente selecionado em memória
                 self.paciente_selecionado['observacoes'] = self.novas_obs
@@ -1326,31 +1179,63 @@ class HEALTHTRACK_APP (ctk.CTk):
         self.desativar_edicao_obs()
 
     def excluir(self):
-        # Exclui paciente do banco SQLite
+        # Verifica se há um paciente selecionado
+        if not self.paciente_selecionado:
+            messagebox.showwarning("Seleção Necessária", "Por favor, selecione um paciente na lista para excluir!")
+            return
+        
+        # Verificar o que está no paciente_selecionado
+        print(F"Tentando excluir: {self.paciente_selecionado}")
+        
+        # Confirmação antes de excluir
+        resposta = messagebox.askyesno(
+            "Confirmar Exclusão",
+            F"Tem certeza que deseja excluir permanentemente o paciente?\n\n"
+            F"Nome: {self.paciente_selecionado['nome']}\n"
+            F"CPF: {self.paciente_selecionado['cpf']}\n\n"
+            F"Esta ação não pode ser desfeita!"
+        )
+
+        if not resposta:
+            return # Usuário cancelou a exclusão
+
         try:
-            # Verifica se há um paciente selecionado
-            if not self.paciente_selecionado:
-                messagebox.showwarning("Seleção Necessária", "Por favor, selecione um paciente na lista para excluir!")
+            # Carrega todos os pacientes
+            pacientes = self.carregar_pacientes()
+            print(f"Total de pacientes antes: {len(pacientes)}")
+
+            # Mostrar todos os Cpfs
+            for i, p in enumerate(pacientes):
+                print(F"Paciente {i}: {p['nome']} - CPF: {p['cpf']}")
+
+            # Filtra removendo o paciente selecionado
+            pacientes_atualizados = []   
+            paciente_encontrado = False
+
+            for paciente in pacientes:
+                # Comparar CPFs (remover possiveis espaços)
+                cpf_arquivo = paciente['cpf'].strip()
+                cpf_selecionado = self.paciente_selecionado['cpf'].strip()
+
+                if cpf_arquivo != cpf_selecionado:
+                    pacientes_atualizados.append(paciente)
+                else:
+                    paciente_encontrado = True
+                    print(f"Paciente encontrado e será removido: {paciente['nome']}")
+            
+            print(f"Paciente encontrado: {paciente_encontrado}")
+            print(f"Total de pacientes depois: {len(pacientes_atualizados)}")
+
+            # Verifica se realmente removeu alguém
+            if not paciente_encontrado:
+                messagebox.showerror("Erro", 
+                    f"Paciente não encontrado no arquivo!\n"
+                    f"Procurando CPF: {self.paciente_selecionado['cpf']}")
                 return
             
-            # Confirmação antes de excluir
-            resposta = messagebox.askyesno(
-                "Confirmar Exclusão",
-                F"Tem certeza que deseja excluir permanentemente o paciente?\n\n"
-                F"Nome: {self.paciente_selecionado['nome']}\n"
-                F"CPF: {self.paciente_selecionado['cpf']}\n\n"
-                F"Esta ação não pode ser desfeita!"
-            )
-
-            if not resposta:
-                return # Usuário cancelou a exclusão
-            
-            conect = self.conectar_banco()
-            cursor = conect.cursor()
-
-            cursor.execute('DELETE FROM pacientes WHERE cpf = ?', (self.paciente_selecionado['cpf'],))
-            conect.commit()
-            conect.close()
+            # Salva a lista atualizada
+            self.salvar_pacientes(pacientes_atualizados)
+            # Mensagem de sucesso
             messagebox.showinfo(
                 "Exclusão Concluida",
                 F"Paciente {self.paciente_selecionado['nome']} foi excluído com sucesso!"
@@ -1360,14 +1245,16 @@ class HEALTHTRACK_APP (ctk.CTk):
             self.paciente_selecionado = None
             self.card_selecionado = None
 
+            # Fecha a janela de relatório se estiver aberta
             if hasattr(self, 'janela_relatorio') and self.janela_relatorio:
                 self.janela_relatorio.destroy()
-
-            self.listar()
+            
+            self.listar()  # Atualiza a lista visual
 
         except Exception as e:
             messagebox.showerror("Erro", F"Erro ao excluir: \n{str(e)}")
             print(F"Erro detalhado: {e}")
+
 
 
 app = HEALTHTRACK_APP()
