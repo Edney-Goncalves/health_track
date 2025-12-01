@@ -152,7 +152,7 @@ class HEALTHTRACK_APP (ctk.CTk):
 
         # botão editar pacientes
         self.btn_editar_pacientes = ctk.CTkButton(
-            self.botoes_frame, text="Editar Pacientes",
+            self.botoes_frame, text="Editar Paciente",
             text_color="#FFFFFF",
             command=self.janela_edicao,
             corner_radius=10,   # arredondado
@@ -197,67 +197,35 @@ class HEALTHTRACK_APP (ctk.CTk):
 
         self.Tela_Home()
 
-        self.verificar_estrutura_banco()
-        if not os.path.exists('interface/data.db'):
-            self.migrar_para_sqlite()
+        self.inicializar_banco()
+        self.adicionar_coluna_observacoes()
 
-    def migrar_para_sqlite(self):
-        # Migra dados do arquivo txt para o bacon SQLite
+    def inicializar_banco(self):
+        # Apenas cria a tabela se não existir
         try:
-            # Verifica se já existem dados no SQLite
             conect = self.conectar_banco()
             cursor = conect.cursor()
-            cursor.execute('SELECT COUNT(*) FROM pacientes')
-            count = cursor.fetchone()[0]
 
-            if count > 0:
-                print(F"Banco já contém {count} pacientes, pulando migração")
-                conect.close()
-                return True
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS pacientes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    age INTEGER NOT NULL,
+                    cpf TEXT UNIQUE NOT NULL,
+                    rg TEXT UNIQUE NOT NULL,
+                    gender TEXT NOT NULL,
+                    health_state TEXT NOT NULL,
+                    disease_history TEXT NOT NULL,
+                    observations TEXT DEFAULT ''           
+                )
+             ''')
             
-            # Carrega pacientes do txt
-            pacientes_txt = self.carregar_pacientes_txt()
-
-            if not pacientes_txt:
-                print("Nenhum dado para migrar do TXT")
-                conect.close()
-                return True
-            
-            print(F"Migrando {len(pacientes_txt)} pacientes do TXT para SQLite...")
-
-            # Insere os dados
-            for paciente in pacientes_txt:
-                try:
-                    cursor.execute(''' 
-                        INSERT OR IGNORE INTO pacientes
-                        (name, age, cpf, rg, gender, health_state, disease_history)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (
-                        paciente['nome'],
-                        int(paciente['idade']),
-                        paciente['cpf'],
-                        paciente['rg'],
-                        paciente['genero'],
-                        paciente['saude'],
-                        paciente['historico'],
-                        paciente.get('observacoes', '')
-                    ))
-                except sqlite3.IntegrityError as e:
-                    print(F"Paciente duplicado ignorado: {paciente['nome']} - {e}")
-                    continue
-                except ValueError:
-                    print(F"Idade inválida para: {paciente['nome']}")
-                    continue        
-
             conect.commit()
             conect.close()
-            print(F"Migração concluida: {len(pacientes_txt)} pacientes migrados")
-            return True
+            print("Banco SQLite inicializado com sucesso")
 
         except Exception as e:
-            print(F"Erro na migração: {e}")
-            traceback.print_exc()
-            return False
+            print(F"Erro ao inicializar banco: {e}")
         
     def conectar_banco(self):
         # Conecta ao banco com tratamento de erro
@@ -297,38 +265,6 @@ class HEALTHTRACK_APP (ctk.CTk):
         except Exception as e:
             print(F"Erro ao verificar estrutura: {e}") 
 
-    def carregar_pacientes_txt(self):
-        # Função temporária para carregar do txt (igual a "carregar_pacientes")
-        pacientes = []
-        try:
-            caminho_arquivo = "interface/dados.txt"
-
-            if os.path.exists(caminho_arquivo):
-                with open(caminho_arquivo, "r", encoding="utf-8") as arquivo:
-                    for linha in arquivo:
-                        linha = linha.strip()
-                        if linha:  
-                            dados = linha.split(",")
-                            # remove espaços em branco dos campos
-                            dados = [dado.strip() for dado in dados]
-
-                            if len(dados) >= 7:  # Verifica se tem todos os campos
-                                paciente = {
-                                    'nome': dados[0],
-                                    'idade': dados[1],
-                                    'cpf': dados[2],
-                                    'rg': dados[3],
-                                    'genero': dados[4],
-                                    'saude': dados[5],
-                                    'historico': dados[6],
-                                    'observacoes': dados[7] if len(dados) > 7 else ''
-                                }
-                                pacientes.append(paciente)
-                print(F"Carregados {len(pacientes)} pacientes do TXT") # Debug
-        except Exception as e:
-            print(f"Erro ao carregar do TXT: {e}")
-        return pacientes
-
     def carregar_pacientes(self):
         # Carrega pacientes do banco SQLite
         pacientes = []
@@ -336,34 +272,50 @@ class HEALTHTRACK_APP (ctk.CTk):
             # Conecta ao SQLite
             conect = self.conectar_banco()
             cursor = conect.cursor()
-            
-            # Agora busca os dados
-            cursor.execute(''' 
-                SELECT name, age, cpf, rg, gender, health_state, disease_history
-                FROM pacientes ORDER BY name
-                ''')
-            
-            for row in cursor.fetchall():
-                paciente = {
-                    'nome': row[0],
-                    'idade': str(row[1]),
-                    'cpf': row[2],
-                    'rg': row[3],
-                    'genero': row[4],
-                    'saude': row[5],
-                    'historico': row[6],
-                    'observacoes': ''
-                }
-                pacientes.append(paciente)
-            
+            cursor.execute("SELECT * FROM pacientes")
+            pacientes_data = cursor.fetchall()
             conect.close()
-            print(F"Carregados {len(pacientes)} pacientes do SQLite")
+
+            # Converter para dicionários incluindo observações
+            pacientes = []
+            for paciente in pacientes_data:
+                pacientes.append({
+                    'id': paciente[0],
+                    'nome': paciente[1],
+                    'cpf': paciente[2],
+                    'idade': paciente[3],
+                    'rg': paciente [4],                
+                    'genero': paciente[5],
+                    'saude': paciente[6],
+                    'historico': paciente[7],
+                    'observacoes': paciente[8] if len(paciente) > 8 else ''
+                })
+
+            return pacientes
         
         except Exception as e:
-            print(F"Erro ao carregar pacientes do SQLite: {e}")
-            traceback.print_exc()
+            print(F"Erro ao carregar pacientes: {e}")
+            return []
+        
+    def adicionar_coluna_observacoes(self):
+        try:
+            conect = self.conectar_banco()
+            cursor =conect.cursor()
 
-        return pacientes
+            # Verifica se a coluna já existe
+            cursor.execute("PRAGMA table_info(pacientes)")
+            colunas = [coluna[1] for coluna in cursor.fetchall()]
+
+            if 'observacoes' not in colunas:
+                cursor.execute("ALTER TABLE pacientes ADD COLUMN observacoes TEXT")
+                conect.commit()
+                print("Coluna 'observacoes' adicionada com sucesso!")
+            else:
+                print("Coluna 'observacoes' já existe!")
+
+            conect.close()
+        except Exception as e:
+            print(F"Erro ao adicionar coluna: {e}")
 
     def mostrar_atalhos(self):
         # Mostra os botões de atalho no menu
@@ -429,16 +381,16 @@ class HEALTHTRACK_APP (ctk.CTk):
 
     def cadastrar(self):
         # Criar subtela
-        janela = ctk.CTkToplevel(self)
-        janela.title("Cadastro de Paciente")
-        janela.geometry("650x500")
-        janela.grab_set()  # trava interação com a janela principal até fechar
+        self.janela_cadastro = ctk.CTkToplevel(self)
+        self.janela_cadastro.title("Cadastro de Paciente")
+        self.janela_cadastro.geometry("650x500")
+        self.janela_cadastro.grab_set()  # trava interação com a janela principal até fechar
 
-        titulo = ctk.CTkLabel(janela, text="Cadastro de Pacientes", font=("Arial", 20, "bold"))
+        titulo = ctk.CTkLabel(self.janela_cadastro, text="Cadastro de Pacientes", font=("Arial", 20, "bold"))
         titulo.pack(pady=20)
 
         # Frame principal com scroll
-        main_scroll_frame = ctk.CTkScrollableFrame(janela)
+        main_scroll_frame = ctk.CTkScrollableFrame(self.janela_cadastro)
         main_scroll_frame.pack(pady=20, padx=20, fill="both", expand=True)
 
         # Frame principal para o formulário dentro do scrollable frame
@@ -490,16 +442,16 @@ class HEALTHTRACK_APP (ctk.CTk):
         historico_doencas.grid(row=9, column=0, columnspan=2, padx=20, pady=(0, 20), sticky="ew")
 
         # Frame para os botões
-        botoes_frame_prin = ctk.CTkFrame(janela, fg_color="transparent")
+        botoes_frame_prin = ctk.CTkFrame(self.janela_cadastro, fg_color="transparent")
         botoes_frame_prin.pack(pady=20)
 
         # Botões
-        salvar = ctk.CTkButton(botoes_frame_prin, text="Salvar Cadastro", font=("Arial", 16, "bold"), height=45, command=lambda: self.salvar_cadastro(nome, idade, Cpf, Rg, genero, estado_saude, historico_doencas, janela))
+        salvar = ctk.CTkButton(botoes_frame_prin, text="Salvar Cadastro", font=("Arial", 16, "bold"), height=45, command=lambda: self.salvar_cadastro(nome, idade, Cpf, Rg, genero, estado_saude, historico_doencas, janela=None))
         salvar.pack(side="left", padx=10)
 
         cancelar = ctk.CTkButton(botoes_frame_prin, text="Cancelar", font=("Arial", 16, "bold"), height=45,
                                  fg_color="#6c757d", hover_color="#c9302c",
-                                  command=janela.destroy)
+                                  command=self.janela_cadastro.destroy)
         cancelar.pack(side="left", padx=10)
 
         self.configurar_validacoes_tempo_real(nome, idade, Cpf, Rg)
@@ -561,6 +513,8 @@ class HEALTHTRACK_APP (ctk.CTk):
         # 7. Validação do Histórico (Básico)
         if dados['historico'] and len(dados['historico']) > 500:
             erros.append("Histórico muito longo (máximo 500 caracteres)")
+        elif dados['historico'] and len(dados['historico']) == 0:
+            erros.append("Histórico de doenças é obrigatório!")
         
         return erros
     
@@ -633,7 +587,7 @@ class HEALTHTRACK_APP (ctk.CTk):
             return F"{rg_limpo[:2]}.{rg_limpo[2:5]}.{rg_limpo[5:8]}-{rg_limpo[8:]}"
         return rg
 
-    def salvar_cadastro(self, nome, idade, Cpf, Rg, genero, estado_saude, historico_doencas, janela):
+    def salvar_cadastro(self, nome, idade, Cpf, Rg, genero, estado_saude, historico_doencas, janela=None):
         # Salva o novo diretamente no SQLite
         try:
             # Coleta de dados
@@ -671,7 +625,7 @@ class HEALTHTRACK_APP (ctk.CTk):
 
             cursor.execute(''' 
                     INSERT INTO pacientes
-                    (name, age, cpf, rg, gender, health_state, disease_history)
+                    (name, age, cpf, rg, gender, health_state, disease_history, observacoes)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     dados['nome'], 
@@ -680,14 +634,24 @@ class HEALTHTRACK_APP (ctk.CTk):
                     dados['rg'], 
                     dados['genero'],
                     dados['saude'], 
-                    dados['historico'], 
+                    dados['historico'],
+                    '' 
             ))
 
             conect.commit()
             conect.close()
 
             messagebox.showinfo("Sucesso", F"Paciente {dados['nome']} cadastrado com sucesso!")
-            janela.destroy()
+            if janela:
+                self.janela.destroy()
+            
+            if hasattr(self, 'janela_cadastro') and self.janela_cadastro:
+                try:
+                    if self.janela_cadastro.winfo_exists():
+                        self.janela_cadastro.destroy()
+                except:
+                    pass
+
             self.listar()
         
         except sqlite3.IntegrityError:
@@ -1149,7 +1113,11 @@ class HEALTHTRACK_APP (ctk.CTk):
             ctk.CTkLabel(scroll_frame, text="Observações:",
                         font=("Arial", 14, "bold")).pack(anchor="w", pady=(10, 5))
             obs_entry = ctk.CTkTextbox(scroll_frame,  height=80, font=("Arial", 14))
-            obs_entry.insert("1.0", self.paciente_selecionado.get('observacoes', ''))
+
+            obs_text = self.paciente_selecionado.get('observacoes', '')
+            if obs_text is None:
+                obs_text = ''
+            obs_entry.insert("1.0", obs_text)
             obs_entry.pack(fill="x", pady=(0, 10))
             self.campos_edicao_rapida['observacoes'] = obs_entry
 
@@ -1174,33 +1142,31 @@ class HEALTHTRACK_APP (ctk.CTk):
     def salvar_edicao_rapida(self, janela_edicao):
         # Salva as edições da janela rápida
         try:
-            # Carrega os pacientes primeiro
-            pacientes = self.carregar_pacientes()
-
-            # Encontra o paciente atual
-            paciente_index = -1
-            for i, paciente in enumerate(pacientes):
-                if paciente['cpf'] == self.paciente_selecionado['cpf']:
-                    paciente_index = i
-                    break
-
-            if paciente_index == -1:
-                messagebox.showerror("Erro", "Paciente não encontrado!")
-                return
+            # Coleta dados antes de qualquer validação
+            dados_editados = {}
             
-            # Atualiza os dados do paciente
-            paciente_atualizado = pacientes[paciente_index].copy()
-
+            # Coleta dados dos campos de forma segura
             for campo, widget in self.campos_edicao_rapida.items():
-                if isinstance(widget, ctk.CTkTextbox):
-                    # Para CTktextbox, usa get("1.0", "end-1c")
-                    paciente_atualizado[campo] = widget.get("1.0", "end-1c").strip()
-                else:
-                    # Para Entry e ComboBox, usa get()
-                    paciente_atualizado[campo] = widget.get().strip()
+                try:
+                    if hasattr(widget, 'winfo_exists') and widget.winfo_exists():
+                        if isinstance(widget, ctk.CTkTextbox):
+                            dados_editados[campo] = widget.get("1.0", "end-1c").strip()
+                        else:
+                            dados_editados[campo] = widget.get().strip()
+                    else:
+                        # Widget já foi destruido, usa valor padrão
+                        dados_editados[campo] = self.paciente_selecionado.get(campo, '')
+                except Exception as e:
+                    print(F"Erro ao coletar campo {campo}: {e}")
+                    dados_editados[campo] = self.paciente_selecionado.get(campo, '')
+
+            # Verifica se coletou dados suficientes
+            if not dados_editados:
+                messagebox.showerror("Erro", "Não foi possivel coletar os dados editados")
+                return
 
             # Validações
-            erros = self.validar_cadastro(paciente_atualizado)
+            erros = self.validar_cadastro(dados_editados)
             if erros:
                 mensagem_erro = "Erros encontrados:\n\n" + "\n".join(F"• {erro}" for erro in erros)
                 messagebox.showerror("Erro na Edição", mensagem_erro)
@@ -1212,29 +1178,39 @@ class HEALTHTRACK_APP (ctk.CTk):
 
             cursor.execute(''' 
                 UPDATE pacientes
-                SET name = ?, age = ?, cpf = ?, rg = ?, gender = ?, health_state = ?, disease_history = ?
+                SET name = ?, age = ?, cpf = ?, rg = ?, gender = ?, health_state = ?, disease_history = ?, observacoes = ?
                 WHERE cpf = ?
             ''', (
-                paciente_atualizado['nome'],
-                int(paciente_atualizado['idade']),
-                paciente_atualizado['cpf'],
-                paciente_atualizado['rg'],
-                paciente_atualizado['genero'],
-                paciente_atualizado['saude'],
-                paciente_atualizado['historico'],
-                self.paciente_atualizado['cpf']
+                dados_editados['nome'],
+                int(dados_editados['idade']),
+                dados_editados['cpf'],
+                dados_editados['rg'],
+                dados_editados['genero'],
+                dados_editados['saude'],
+                dados_editados['historico'],
+                dados_editados.get('observacoes', ''),
+                self.paciente_selecionado['cpf']
             ))
 
             conect.commit()
             conect.close()
 
             messagebox.showinfo("Sucesso", "Dados atualizados com sucesso!")
-            self.paciente_selecionado = paciente_atualizado
+
+            # Atualiza o paciente selecionado em memória
+            self.paciente_selecionado.update(dados_editados)
+
+            # Fecha a janela antes de atualizar a interface
             janela_edicao.destroy()
 
             # Atualiza a interface
             if hasattr(self, 'janela_relatorio') and self.janela_relatorio:
-                self.janela_relatorio.destroy()
+                try:
+                    if self.janela_relatorio.winfo_exists():
+                        self.janela_relatorio.destroy()
+                except:
+                    pass
+
             self.listar()
 
         except Exception as e:
@@ -1286,23 +1262,24 @@ class HEALTHTRACK_APP (ctk.CTk):
         try:
             self.novas_obs = self.observacoes_text.get("1.0", "end-1c").strip()
 
-            # Carrega todos os pacientes
-            pacientes = self.carregar_pacientes()
+            # Atualiza as observações no banco de dados diretamente
+            conect = self.conectar_banco()
+            cursor = conect.cursor()
 
-            # Atualiza as observações do paciente selecionado
-            for paciente in pacientes:
-                if paciente['cpf'] == self.paciente_selecionado['cpf']:
-                    paciente['observacoes'] = self.novas_obs
-                    break
+            cursor.execute('''
+                UPDATE pacientes
+                SET observacoes = ?
+                WHERE cpf = ?
+             ''', (self.novas_obs, self.paciente_selecionado['cpf']))
+            
+            conect.commit()
+            conect.close()
 
-            # Salva no arquivo
-            if self.salvar_edicao_rapida(pacientes):
-                messagebox.showinfo("Sucesso", "Observações salvas com sucesso!")
-                # Atualiza o paciente selecionado em memória
-                self.paciente_selecionado['observacoes'] = self.novas_obs
-                self.obs_original = self.novas_obs
-            else:
-                messagebox.showerror("Erro", "Erro ao salvar observações!")
+            messagebox.showinfo("Sucesso", "Observações salvas com sucesso!")
+
+            # Atualiza o paciente selecionado em memória
+            self.paciente_selecionado['observacoes'] = self.novas_obs
+            self.obs_original = self.novas_obs
 
             # Desativa modo edição
             self.desativar_edicao_obs()

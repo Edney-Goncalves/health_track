@@ -151,7 +151,7 @@ class HEALTHTRACK_APP (ctk.CTk):
 
         # botão editar pacientes
         self.btn_editar_pacientes = ctk.CTkButton(
-            self.botoes_frame, text="Editar Pacientes",
+            self.botoes_frame, text="Editar Paciente",
             text_color="#FFFFFF",
             command=self.janela_edicao,
             corner_radius=10,   # arredondado

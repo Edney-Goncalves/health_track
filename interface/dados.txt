@@ -1,10 +1,11 @@
-Ronaldo Alvez,30,565.133.244-78,80.543.162-7,masculino,Bem,Diabetes
-Mariana Souza,25,421.778.993-12,29.554.871-3,feminino,Alerta,Asma
-Carlos Henrique,42,812.445.667-90,42.887.231-9,masculino,Mal,Cardiopatia
-Fernanda Lima,37,356.119.884-65,18.667.492-0,feminino,Bem,Hipertensão
-João Pedro,55,998.224.311-08,55.323.199-6,masculino,Mal,Insuficiência renal
-Ana Beatriz,29,744.512.998-43,20.654.884-1,feminino,Bem,Enxaqueca
-Lucas Martins,33,187.334.552-71,10.432.778-5,masculino,Alerta,Gastrite crônica
-Patrícia Gomes,47,543.998.221-56,90.554.332-4,feminino,Mal,Artrite reumatoide
-Ricardo Tavares,62,699.114.775-02,70.332.115-9,masculino,Alerta,Doença pulmonar obstrutiva crônica
-Juliana Ribeiro,39,801.233.441-88,31.779.100-7,feminino,Bem,Hipotireoidismo
+Ronaldo Alvez Soares,65,565.133.244-78,80.543.162-7,Masculino,Emergência,Hipertensão,Deve tomar remédio
+Mariana Souza,25,421.778.993-12,29.554.871-3,Feminino,Não Urgência,Asma,
+Carlos Henrique,42,812.445.667-90,42.887.231-9,masculino,Mal,Cardiopatia,
+Fernanda Lima,37,356.119.884-65,18.667.492-0,feminino,Bem,Hipertensão,
+João Pedro,55,998.224.311-08,55.323.199-6,masculino,Mal,Insuficiência renal,
+Ana Beatriz,29,744.512.998-43,20.654.884-1,feminino,Bem,Enxaqueca,
+Lucas Martins,33,187.334.552-71,10.432.778-5,masculino,Alerta,Gastrite crônica,
+Patrícia Gomes,47,543.998.221-56,90.554.332-4,feminino,Mal,Artrite reumatoide,
+Ricardo Tavares,62,699.114.775-02,70.332.115-9,masculino,Alerta,Doença pulmonar obstrutiva crônica,
+Marcela Costa,90,123.456.789-09,23.459.876-5,Feminino,Emergência,Parada Cardiaca,
+Romeu Gonçalvez,67,345.609.123-21,67.843.900-2,Masculino,Não Urgência,Câncer no figado,as
